@@ -1,0 +1,43 @@
+<html>
+
+<head>
+  <title>Hackathon Streaming RBS FX Rates</title>
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap-theme.min.css">
+
+  <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+  <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+
+</head>
+
+<body>
+  <nav class="navbar navbar-default" role="navigation">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="/">
+          <span class="glyphicon glyphicon-align-right"></span> FXMP Stream
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <pre id='rate' style="font-size:10px">You will see data in less than 10s...</pre>
+
+  <script type="text/javascript">
+
+    var mm = {};
+    mm["GBPEUR"] = {};
+    mm["GBPEUR"]["ripple"] = "fred"
+
+    if (mm["GBPUSD"] == null) {
+      document.getElementById('rate').innerText = "null";
+    } else {
+      document.getElementById('rate').innerText = "not null";
+    }
+
+
+  </script>
+</body>
+
+</html>

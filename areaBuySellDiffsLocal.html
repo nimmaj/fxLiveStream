@@ -1,0 +1,158 @@
+<html>
+
+<head>
+  <title>Hackathon Streaming RBS FX Rates</title>
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap-theme.min.css">
+
+  <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+  <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+
+  <script src="http://js.pusher.com/2.2/pusher.min.js" type="text/javascript"></script>
+  <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+
+  <style>
+    svg {
+      font: 10px sans-serif;
+    }
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: #000;
+      shape-rendering: crispEdges;
+    }
+    .barea {
+      fill: steelBlue;
+    }
+    .sarea {
+      fill: red;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar navbar-default" role="navigation">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="/">
+          <span class="glyphicon glyphicon-align-right"></span> FXMP Stream
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <pre id='rate' style="font-size:10px">You will see data in less than 10s...</pre>
+
+  <script type="text/javascript">
+    var connection = new WebSocket('ws://localhost:9090');
+    connection.onopen = function () {
+      console.log("w/s open")
+    }
+    connection.onmessage = updateRates;
+    connection.onclose = function () {
+      console.log("w/s close")
+    }
+
+    const points = 41;
+    var data = Array.apply(null, Array(points)).map(emptyPoint);
+
+    var margin = {top: 20, right: 20, bottom: 30, left: 50},
+        width = 960 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+    var x = d3.scale.linear().domain([0, points - 1]).range([0, width]);
+
+    var y = d3.scale.linear().domain([0, 2]).range([height, 0]);
+
+    var sarea = d3.svg.area()
+        .x(function(d, i) { return x(i); })
+        .y0(function(d) { return y(d.sellLow); })
+        .y1(function(d) { return y(d.sellHigh); });
+
+    var barea = d3.svg.area()
+        .x(function(d, i) { return x(i); })
+        .y0(function(d) { return y(d.buyLow); })
+        .y1(function(d) { return y(d.buyHigh); });
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    svg.append("defs").append("clipPath")
+        .attr("id", "clip")
+        .append("rect")
+        .attr("width", width)
+        .attr("height", height);
+
+    svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + y(0) + ")")
+        .call(d3.svg.axis().scale(x).orient("bottom"));
+
+    svg.append("g")
+        .attr("class", "y axis")
+        .call(d3.svg.axis().scale(y).orient("left"));
+
+    var spath = svg.append("g")
+        .attr("clip-path", "url(#clip)")
+        .append("path")
+        .datum(data)
+        .attr("class", "sarea")
+        .attr("d", sarea);
+
+    var bpath = svg.append("g")
+        .attr("clip-path", "url(#clip)")
+        .append("path")
+        .datum(data)
+        .attr("class", "barea")
+        .attr("d", barea);
+
+    function updateRates(ratesWsMessage) {
+      var rates = JSON.parse(ratesWsMessage.data);
+
+      var fr = rates["EURUSD"]["fxmp"];
+      var frr = rates["EURUSD"]["fxmp.rnd"];
+
+      data.push(createPoint(fr.updated, frr.buy, fr.buy, fr.sell, frr.sell));
+
+      spath
+        .attr("d", sarea)
+        .attr("transform", null)
+        .transition()
+        .duration(500)
+        .ease("linear")
+        .attr("transform", "translate(" + x(-1) + ",0)");
+
+      bpath
+        .attr("d", barea)
+        .attr("transform", null)
+        .transition()
+        .duration(500)
+        .ease("linear")
+        .attr("transform", "translate(" + x(-1) + ",0)");
+
+      data.shift();
+
+      document.getElementById('rate').innerText = JSON.stringify(data);
+    }
+
+    function emptyPoint() {
+      return createPoint("",0,0,0,0);
+    }
+
+    function createPoint(t, bl, bh, sl, sh) {
+      return {
+        time: t,
+        buyLow: bl,
+        buyHigh: bh,
+        sellLow: sl,
+        sellHigh: sh
+      }
+    }
+  </script>
+</body>
+
+</html>
